@@ -36,6 +36,11 @@ public:
 	{
 		DirectX::XMMATRIX view;
 		DirectX::XMVECTOR eyePos;
+		DirectX::XMFLOAT4 gFogColor;
+		int gFogOn;
+		float gFogStart;
+		float gFogRange;
+		
 	};
 
 	struct CBChangesOnResize
@@ -74,6 +79,7 @@ public:
 	ComPtr<ID3D11PixelShader>  m_pPixelShader3D;				// 用于3D的像素着色器
 
 	ComPtr<ID3D11InputLayout>  m_pVertexLayout3D;				// 用于3D的顶点输入布局
+	ComPtr<ID3D11InputLayout>  m_pVertexLayoutBoard;			// 用于告示板的输入布局
 
 	ComPtr<ID3D11ShaderResourceView> m_pTexture;				// 用于绘制的纹理
 
@@ -148,8 +154,8 @@ bool BasicEffect::InitAll(ID3D11Device * device)
 
 	pImpl->m_pCBuffers.assign({
 		&pImpl->m_CBDrawing, 
-		&pImpl->m_CBFrame, 
 		&pImpl->m_CBStates, 
+		& pImpl->m_CBFrame,
 		&pImpl->m_CBOnResize, 
 		&pImpl->m_CBRarely});
 
@@ -183,32 +189,7 @@ void BasicEffect::SetRenderDefault(ID3D11DeviceContext * deviceContext)
 	deviceContext->OMSetDepthStencilState(nullptr, 0);
 	deviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
 }
-
-void BasicEffect::SetRenderAlphaBlend(ID3D11DeviceContext * deviceContext)
-{
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	deviceContext->IASetInputLayout(pImpl->m_pVertexLayout3D.Get());
-	deviceContext->VSSetShader(pImpl->m_pVertexShader3D.Get(), nullptr, 0);
-	deviceContext->RSSetState(RenderStates::RSNoCull.Get());
-	deviceContext->PSSetShader(pImpl->m_pPixelShader3D.Get(), nullptr, 0);
-	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
-	deviceContext->OMSetDepthStencilState(nullptr, 0);
-	deviceContext->OMSetBlendState(RenderStates::BSTransparent.Get(), nullptr, 0xFFFFFFFF);
-}
-
-void BasicEffect::SetRenderNoDoubleBlend(ID3D11DeviceContext * deviceContext, UINT stencilRef)
-{
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	deviceContext->IASetInputLayout(pImpl->m_pVertexLayout3D.Get());
-	deviceContext->VSSetShader(pImpl->m_pVertexShader3D.Get(), nullptr, 0);
-	deviceContext->RSSetState(RenderStates::RSNoCull.Get());
-	deviceContext->PSSetShader(pImpl->m_pPixelShader3D.Get(), nullptr, 0);
-	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
-	deviceContext->OMSetDepthStencilState(RenderStates::DSSNoDoubleBlend.Get(), stencilRef);
-	deviceContext->OMSetBlendState(RenderStates::BSTransparent.Get(), nullptr, 0xFFFFFFFF);
-}
-
-void BasicEffect::SetWriteStencilOnly(ID3D11DeviceContext * deviceContext, UINT stencilRef)
+void BasicEffect::SetRenderNoDoubleBlend(ID3D11DeviceContext* deviceContext, UINT stencilRef)
 {
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	deviceContext->IASetInputLayout(pImpl->m_pVertexLayout3D.Get());
@@ -216,23 +197,11 @@ void BasicEffect::SetWriteStencilOnly(ID3D11DeviceContext * deviceContext, UINT 
 	deviceContext->RSSetState(nullptr);
 	deviceContext->PSSetShader(pImpl->m_pPixelShader3D.Get(), nullptr, 0);
 	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
-	deviceContext->OMSetDepthStencilState(RenderStates::DSSWriteStencil.Get(), stencilRef);
-	deviceContext->OMSetBlendState(RenderStates::BSNoColorWrite.Get(), nullptr, 0xFFFFFFFF);
+	deviceContext->OMSetDepthStencilState(RenderStates::DSSNoDoubleBlend.Get(), stencilRef);
+	deviceContext->OMSetBlendState(RenderStates::BSTransparent.Get(), nullptr, 0xFFFFFFFF);
 }
 
-void BasicEffect::SetRenderDefaultWithStencil(ID3D11DeviceContext * deviceContext, UINT stencilRef)
-{
-	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	deviceContext->IASetInputLayout(pImpl->m_pVertexLayout3D.Get());
-	deviceContext->VSSetShader(pImpl->m_pVertexShader3D.Get(), nullptr, 0);
-	deviceContext->RSSetState(RenderStates::RSCullClockWise.Get());
-	deviceContext->PSSetShader(pImpl->m_pPixelShader3D.Get(), nullptr, 0);
-	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
-	deviceContext->OMSetDepthStencilState(RenderStates::DSSDrawWithStencil.Get(), stencilRef);
-	deviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
-}
-
-void BasicEffect::SetRenderAlphaBlendWithStencil(ID3D11DeviceContext * deviceContext, UINT stencilRef)
+void BasicEffect::SetRenderTransWithoutDepthWrite(ID3D11DeviceContext* deviceContext)
 {
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	deviceContext->IASetInputLayout(pImpl->m_pVertexLayout3D.Get());
@@ -240,10 +209,9 @@ void BasicEffect::SetRenderAlphaBlendWithStencil(ID3D11DeviceContext * deviceCon
 	deviceContext->RSSetState(RenderStates::RSNoCull.Get());
 	deviceContext->PSSetShader(pImpl->m_pPixelShader3D.Get(), nullptr, 0);
 	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
-	deviceContext->OMSetDepthStencilState(RenderStates::DSSDrawWithStencil.Get(), stencilRef);
-	deviceContext->OMSetBlendState(RenderStates::BSTransparent.Get(), nullptr, 0xFFFFFFFF);
+	deviceContext->OMSetDepthStencilState(RenderStates::DSSNoDepthWrite.Get(),0);
+	deviceContext->OMSetBlendState(RenderStates::BSAddictive.Get(), nullptr, 0xFFFFFFFF);
 }
-
 
 void XM_CALLCONV BasicEffect::SetWorldMatrix(DirectX::FXMMATRIX W)
 {
@@ -339,6 +307,27 @@ void BasicEffect::SetShadowState(bool isOn)
 {
 	auto& cBuffer = pImpl->m_CBStates;
 	cBuffer.data.isShadow = isOn;
+	pImpl->m_IsDirty = cBuffer.isDirty = true;
+}
+
+void BasicEffect::SetFogState(bool isOn)
+{
+	auto& cBuffer = pImpl->m_CBFrame;
+	cBuffer.data.gFogOn = isOn?1:0;
+	pImpl->m_IsDirty = cBuffer.isDirty = true;
+}
+
+bool BasicEffect::GetShadowState()
+{
+	return pImpl->m_CBStates.data.isShadow;
+}
+
+void XM_CALLCONV BasicEffect::SetFogPara(float start, float range, DirectX::XMFLOAT4 color)
+{
+	auto& cBuffer = pImpl->m_CBFrame;
+	cBuffer.data.gFogStart = start;
+	cBuffer.data.gFogRange = range;
+	cBuffer.data.gFogColor = color;
 	pImpl->m_IsDirty = cBuffer.isDirty = true;
 }
 

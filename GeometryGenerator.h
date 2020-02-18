@@ -22,12 +22,18 @@ public:
 	//创建正方体
 	template<typename VertexType>
 	void GenerateCube(std::vector<VertexType>& vertices, std::vector<WORD>& indices, float sideLength = 2);
+	//创建球体,该球体有slices片，每片分为divides层
+	template<typename VertexType>
+	void GenerateSphere(std::vector<VertexType>& vertices, std::vector<WORD>& indices, float radius, UINT slices=20, UINT divides=20);
 	//创建覆盖NDC的平面
 	template<typename VertexType>
 	void GeneratePlane(std::vector<VertexType>& vertices, std::vector<WORD>& indices);
 	//创建一个面
 	template<typename VertexType>
 	void GenerateSurface(std::vector<VertexType>& vertices, std::vector<WORD>& indices, float length = 20, float width = 20, const DirectX::XMFLOAT4& TexCoord = { 0.0,0.0,1.0,1.0 });
+	//创建圆柱面
+	template<typename VertexType>
+	void GenerateCylinderSurface(std::vector<VertexType>& vertices, std::vector<WORD>& indices, float radius = 1, float height = 2, UINT slices = 20);
 	//设置顶点描述
 	void SetVertexDesc(const VertexDesc& desc) { vertexDesc = desc; };
 private:
@@ -132,6 +138,77 @@ void GeometryGenerator::GenerateCube(std::vector<VertexType>& vertices, std::vec
 }
 
 template<typename VertexType>
+void GeometryGenerator::GenerateSphere(std::vector<VertexType>& vertices, std::vector<WORD>& indices, float radius, UINT slices, UINT divides)
+{
+	using namespace DirectX;
+	float delTheta = XM_2PI / divides, delGama = XM_PI/ slices;
+	
+	UINT vertexCount = 2 + (slices - 1) * divides ;
+	UINT indexCount = 6 * (slices-1) * divides;
+	vertices.resize(vertexCount);
+	indices.resize(indexCount);
+
+	//顶点
+	vertices[0].pos = XMFLOAT3{ 0,radius,0 };
+	if (vertexDesc.normal)
+		vertices[0].normal = XMFLOAT3(0, 1, 0);
+	
+
+	int index = 1;
+
+	//面上点
+	for (float gama = delGama; gama < XM_PI; gama += delGama)
+	{
+		float r = radius * sin(gama);
+		float h = radius * cos(gama);
+		for (float theta = 0; theta < XM_2PI && fabs(theta - 2 * XM_PI)>1e-6; theta += delTheta)
+		{
+			vertices[index].pos = XMFLOAT3(r * cos(theta), h, r * sin(theta));
+			if (vertexDesc.normal)
+				vertices[index].normal = XMFLOAT3(cos(theta), cos(gama), sin(gama) * sin(theta));
+			index++;
+		}
+	}
+	//底面点
+	vertices[index].pos = XMFLOAT3(0, -radius, 0);
+	if (vertexDesc.normal)
+		vertices[index].normak = XMFLOAT3(0, -1, 0);
+
+	index = 0;
+	for (int i = 1; i <= divides; i++)
+	{
+		//顶层
+		indices[index++] = 0;
+		indices[index++] = i % divides + 1;
+		indices[index++] = i;
+		
+	}
+	for (int i = 0; i < slices - 2; i++)
+	{
+		for (int j = 0; j < divides; j++)
+		{
+			indices[index++] = i * divides + j + 1;
+			indices[index++] = i * divides + (j + 1) % divides + 1;
+			indices[index++] = i * divides + j + divides + 1;
+
+			indices[index++] = i * divides + j + divides + 1;
+			indices[index++] = i * divides + (j + 1) % divides + 1;
+			indices[index++] = i * divides + (j + 1) % divides + divides + 1;
+
+		}
+	}
+	for (int i = 1; i <= divides; i++)
+	{
+		//底
+		int size = index-1;
+		indices[index++]=size;
+		indices[index++]=size - divides + i - 1;
+		indices[index++]=size - divides + i % divides;
+	}
+
+}
+
+template<typename VertexType>
 void  GeometryGenerator::GeneratePlane(std::vector<VertexType>& vertices, std::vector<WORD>& indices)
 {
 
@@ -169,4 +246,44 @@ void  GeometryGenerator::GenerateSurface(std::vector<VertexType>& vertices, std:
 		0,1,2,
 		2,3,0
 	};
+}
+
+template<typename VertexType>
+void GeometryGenerator::GenerateCylinderSurface(std::vector<VertexType>& vertices, std::vector<WORD>& indices, float radius, float height, UINT slices)
+{
+	using namespace DirectX;
+	vertices.resize(2 * (slices + 1));
+	indices.resize(6 * slices);
+	int index = 0;
+	float theta = XM_2PI / slices;
+	for (UINT i = 0; i <= slices; i++)
+	{
+		float angle = i * theta;
+		//上层点
+		vertices[index].pos = XMFLOAT3(radius * cos(angle), height / 2, radius * sin(angle));
+		if (vertexDesc.normal)
+			vertices[index].normal = XMFLOAT3(cos(i), 0, sin(i));
+		if (vertexDesc.tex)
+			vertices[index].tex = XMFLOAT2(static_cast<float>(i) / slices, 0);
+		index++;
+		//下层点
+		vertices[index].pos = XMFLOAT3(radius * cos(angle), -height / 2, radius * sin(angle));
+		if (vertexDesc.normal)
+			vertices[index].normal = XMFLOAT3(cos(i), 0, sin(i));
+		if (vertexDesc.tex)
+			vertices[index].tex = XMFLOAT2(static_cast<float>(i) / slices, 1);
+		index++;
+	}
+	index = 0;
+	for (WORD i = 0; i < slices * 2; i += 2)
+	{
+		indices[index++] = i;
+		indices[index++] = i + 3;
+		indices[index++] = i + 1;
+		
+		indices[index++] = i;
+		indices[index++] = i + 2;
+		indices[index++] = i + 3;
+	}
+
 }

@@ -52,6 +52,15 @@ public:
 		return XMLoadFloat4x4(&m_WorldMatrix);
 	}
 	// 绘制
+	//设置阴影
+	void SetShadow(bool on)
+	{
+		m_Shadow = on;
+	}
+	void SetShadowMaterial(const Material& mat)
+	{
+		m_ShadowMaterial = mat;
+	}
 	void Draw(ID3D11DeviceContext * deviceContext, BasicEffect& effect);
 
 	// 设置调试对象名
@@ -65,7 +74,8 @@ private:
 	ComPtr<ID3D11Buffer> m_pIndexBuffer;				// 索引缓冲区
 	UINT m_VertexStride;								// 顶点字节大小
 	UINT m_IndexCount;								    // 索引数目	
-	bool m_Shadow;
+	bool m_Shadow;										// 该物体是否有影子
+	Material m_ShadowMaterial;				// 影子的材质
 };
 
 template<typename VertexType>

@@ -133,12 +133,24 @@
     <None Include="HLSL\LightHelper.hlsli">
       <Filter>着色器</Filter>
     </None>
+    <None Include="HLSL\define.hlsli">
+      <Filter>着色器</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="HLSL\Basic_PS_3D.hlsl">
       <Filter>着色器</Filter>
     </FxCompile>
     <FxCompile Include="HLSL\Basic_VS_3D.hlsl">
+      <Filter>着色器</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Billboard_VS.hlsl">
+      <Filter>着色器</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Billboard_GS.hlsl">
+      <Filter>着色器</Filter>
+    </FxCompile>
+    <FxCompile Include="HLSL\Billboard_PS.hlsl">
       <Filter>着色器</Filter>
     </FxCompile>
   </ItemGroup>

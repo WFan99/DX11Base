@@ -62,17 +62,10 @@ public:
 
 	// 默认状态来绘制
 	void SetRenderDefault(ID3D11DeviceContext * deviceContext);
-	// Alpha混合绘制
-	void SetRenderAlphaBlend(ID3D11DeviceContext * deviceContext);
 	// 无二次混合
 	void SetRenderNoDoubleBlend(ID3D11DeviceContext * deviceContext, UINT stencilRef);
-	// 仅写入模板值
-	void SetWriteStencilOnly(ID3D11DeviceContext * deviceContext, UINT stencilRef);
-	// 对指定模板值的区域进行绘制，采用默认状态
-	void SetRenderDefaultWithStencil(ID3D11DeviceContext * deviceContext, UINT stencilRef);
-	// 对指定模板值的区域进行绘制，采用Alpha混合
-	void SetRenderAlphaBlendWithStencil(ID3D11DeviceContext * deviceContext, UINT stencilRef);
-
+	// 透明物体深度测试但不写入
+	void SetRenderTransWithoutDepthWrite(ID3D11DeviceContext* deviceContext);
 
 
 	//
@@ -87,6 +80,8 @@ public:
 	void XM_CALLCONV SetShadowMatrix(DirectX::FXMMATRIX S);
 	void XM_CALLCONV SetRefShadowMatrix(DirectX::FXMMATRIX RefS);
 	
+
+
 	//
 	// 光照、材质和纹理相关设置
 	//
@@ -112,7 +107,11 @@ public:
 
 	void SetReflectionState(bool isOn);
 	void SetShadowState(bool isOn);
-	
+	void SetFogState(bool isOn);
+	bool GetShadowState();
+
+	//设置雾的参数
+	void XM_CALLCONV SetFogPara(float start, float range, DirectX::XMFLOAT4 color);
 
 	// 应用常量缓冲区和纹理资源的变更
 	void Apply(ID3D11DeviceContext * deviceContext);

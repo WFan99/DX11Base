@@ -13,12 +13,14 @@ ComPtr<ID3D11SamplerState> RenderStates::SSLinearWrap			= nullptr;
 ComPtr<ID3D11BlendState> RenderStates::BSAlphaToCoverage		= nullptr;
 ComPtr<ID3D11BlendState> RenderStates::BSNoColorWrite			= nullptr;
 ComPtr<ID3D11BlendState> RenderStates::BSTransparent			= nullptr;
+ComPtr<ID3D11BlendState> RenderStates::BSAddictive = nullptr;
 
 ComPtr<ID3D11DepthStencilState> RenderStates::DSSWriteStencil	= nullptr;
 ComPtr<ID3D11DepthStencilState> RenderStates::DSSDrawWithStencil= nullptr;
 ComPtr<ID3D11DepthStencilState> RenderStates::DSSNoDoubleBlend	= nullptr;
 ComPtr<ID3D11DepthStencilState> RenderStates::DSSNoDepthTest	= nullptr;
 ComPtr<ID3D11DepthStencilState> RenderStates::DSSNoDepthWrite	= nullptr;
+
 
 bool RenderStates::IsInit()
 {
@@ -113,6 +115,16 @@ void RenderStates::InitAll(ID3D11Device * device)
 
 	HR(device->CreateBlendState(&blendDesc, BSTransparent.GetAddressOf()));
 	
+	blendDesc.AlphaToCoverageEnable = false;
+	blendDesc.IndependentBlendEnable = false;
+	rtDesc.BlendEnable = true;
+	rtDesc.SrcBlend = D3D11_BLEND_ONE;
+	rtDesc.DestBlend = D3D11_BLEND_ONE;
+	rtDesc.BlendOp = D3D11_BLEND_OP_ADD;
+	rtDesc.SrcBlendAlpha = D3D11_BLEND_ZERO;
+	rtDesc.DestBlendAlpha = D3D11_BLEND_ONE;
+	rtDesc.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	HR(device->CreateBlendState(&blendDesc, BSAddictive.GetAddressOf()));
 	// 无颜色写入混合模式
 	// Color = DestColor
 	// Alpha = DestAlpha

@@ -11,7 +11,9 @@ float4 PS_3D(VertexPosHWNormalTex pIn) : SV_Target
     pIn.NormalW = normalize(pIn.NormalW);
 
     // 顶点指向眼睛的向量
-    float3 toEyeW = normalize(g_EyePosW - pIn.PosW);
+    float3 toEyeW =  g_EyePosW - pIn.PosW;
+	float disToEye = length(toEyeW);
+	toEyeW /= disToEye;
 
     // 初始化为0 
     float4 ambient = float4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -79,9 +81,18 @@ float4 PS_3D(VertexPosHWNormalTex pIn) : SV_Target
     }
         
     
-
-	
     float4 litColor = texColor * (ambient + diffuse) + spec;
-    litColor.a = texColor.a * g_Material.Diffuse.a;
-    return litColor;
-}
+	
+	[flatten]
+	if (g_IsFog)
+	{
+		
+		float fogLerp = saturate((disToEye - gFogStart) / gFogRange);
+		//Blend the flog color and the lit color
+		litColor = lerp(litColor, gFogColor, fogLerp);
+
+	}
+	
+		litColor.a = texColor.a * g_Material.Diffuse.a;
+		return litColor;
+	}

@@ -6,6 +6,8 @@ GameObject::GameObject()
 	: m_IndexCount(),
 	m_Material(),
 	m_VertexStride(),
+	m_Shadow(false),
+	m_ShadowMaterial({}),
 	m_WorldMatrix(
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
@@ -79,8 +81,11 @@ void GameObject::Draw(ID3D11DeviceContext * deviceContext, BasicEffect& effect)
 
 	// 更新数据并应用
 	effect.SetWorldMatrix(XMLoadFloat4x4(&m_WorldMatrix));
+	if (effect.GetShadowState())
+		effect.SetMaterial(m_ShadowMaterial);
+	else
+		effect.SetMaterial(m_Material);
 	effect.SetTexture(m_pTexture.Get());
-	effect.SetMaterial(m_Material);
 	effect.Apply(deviceContext);
 
 	deviceContext->DrawIndexed(m_IndexCount, 0, 0);
