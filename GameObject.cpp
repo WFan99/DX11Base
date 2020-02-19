@@ -6,7 +6,6 @@ GameObject::GameObject()
 	: m_IndexCount(),
 	m_Material(),
 	m_VertexStride(),
-	m_Shadow(false),
 	m_ShadowMaterial({}),
 	m_WorldMatrix(
 		1.0f, 0.0f, 0.0f, 0.0f,
@@ -81,10 +80,23 @@ void GameObject::Draw(ID3D11DeviceContext * deviceContext, BasicEffect& effect)
 
 	// 更新数据并应用
 	effect.SetWorldMatrix(XMLoadFloat4x4(&m_WorldMatrix));
-	if (effect.GetShadowState())
-		effect.SetMaterial(m_ShadowMaterial);
-	else
-		effect.SetMaterial(m_Material);
+	effect.SetMaterial(m_Material);
+	effect.SetTexture(m_pTexture.Get());
+	effect.Apply(deviceContext);
+
+	deviceContext->DrawIndexed(m_IndexCount, 0, 0);
+}
+
+void GameObject::DrawShadow(ID3D11DeviceContext* deviceContext, BasicEffect& effect)
+{
+	UINT strides = m_VertexStride;
+	UINT offsets = 0;
+	deviceContext->IASetVertexBuffers(0, 1, m_pVertexBuffer.GetAddressOf(), &strides, &offsets);
+	deviceContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0);
+
+	// 更新数据并应用
+	effect.SetWorldMatrix(XMLoadFloat4x4(&m_WorldMatrix));
+	effect.SetMaterial(m_ShadowMaterial);
 	effect.SetTexture(m_pTexture.Get());
 	effect.Apply(deviceContext);
 
@@ -96,8 +108,10 @@ void GameObject::SetDebugObjectName(const std::string& name)
 #if (defined(DEBUG) || defined(_DEBUG)) && (GRAPHICS_DEBUGGER_OBJECT_NAME)
 	std::string vbName = name + ".VertexBuffer";
 	std::string ibName = name + ".IndexBuffer";
+	std::string texName = name + ".Texture";
 	m_pVertexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(vbName.length()), vbName.c_str());
 	m_pIndexBuffer->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(ibName.length()), ibName.c_str());
+	m_pTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(texName.length()), texName.c_str());
 #else
 	UNREFERENCED_PARAMETER(name);
 #endif

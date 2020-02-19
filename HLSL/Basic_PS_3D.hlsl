@@ -95,4 +95,4 @@ float4 PS_3D(VertexPosHWNormalTex pIn) : SV_Target
 	
 		litColor.a = texColor.a * g_Material.Diffuse.a;
 		return litColor;
-	}
+}

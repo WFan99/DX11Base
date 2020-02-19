@@ -32,9 +32,11 @@ public:
 	void XM_CALLCONV Move(const DirectX::XMFLOAT3& v);
 	void XM_CALLCONV Move(const DirectX::XMVECTOR& v);
 	void Move(float x, float y, float z);
+	
 	// 设置缓冲区
 	template<class VertexType>
 	void SetBuffer(ID3D11Device * device, const std::vector<VertexType>& vertices, const std::vector<WORD>& indices);
+	
 	// 设置纹理
 	void SetTexture(ID3D11ShaderResourceView * texture);
 	// 设置材质
@@ -52,21 +54,17 @@ public:
 		return XMLoadFloat4x4(&m_WorldMatrix);
 	}
 	// 绘制
-	//设置阴影
-	void SetShadow(bool on)
-	{
-		m_Shadow = on;
-	}
 	void SetShadowMaterial(const Material& mat)
 	{
 		m_ShadowMaterial = mat;
 	}
-	void Draw(ID3D11DeviceContext * deviceContext, BasicEffect& effect);
-
+	virtual void Draw(ID3D11DeviceContext * deviceContext, BasicEffect& effect);
+	virtual void DrawShadow(ID3D11DeviceContext* deviceContext, BasicEffect& effect);
 	// 设置调试对象名
 	// 若缓冲区被重新设置，调试对象名也需要被重新设置
-	void SetDebugObjectName(const std::string& name);
-private:
+	virtual void SetDebugObjectName(const std::string& name);
+
+protected:
 	DirectX::XMFLOAT4X4 m_WorldMatrix;				    // 世界矩阵
 	Material m_Material;								// 物体材质
 	ComPtr<ID3D11ShaderResourceView> m_pTexture;		// 纹理
@@ -74,8 +72,7 @@ private:
 	ComPtr<ID3D11Buffer> m_pIndexBuffer;				// 索引缓冲区
 	UINT m_VertexStride;								// 顶点字节大小
 	UINT m_IndexCount;								    // 索引数目	
-	bool m_Shadow;										// 该物体是否有影子
-	Material m_ShadowMaterial;				// 影子的材质
+	Material m_ShadowMaterial;							// 影子的材质
 };
 
 template<typename VertexType>

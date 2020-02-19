@@ -22,6 +22,9 @@
     <Filter Include="着色器">
       <UniqueIdentifier>{4ba08af4-cc4b-4124-b4d1-38bc4dd67ee1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Object">
+      <UniqueIdentifier>{51d07364-5a31-4a92-a28b-0595f39c8ca9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="通用文件\DDSTextureLoader.cpp">
@@ -54,9 +57,6 @@
     <ClCompile Include="GameApp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="GameObject.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="GameTimer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -68,6 +68,12 @@
     </ClCompile>
     <ClCompile Include="Vertex.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>Object</Filter>
+    </ClCompile>
+    <ClCompile Include="BillboardObject.cpp">
+      <Filter>Object</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -104,9 +110,6 @@
     <ClInclude Include="GameApp.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="GameObject.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="GameTimer.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -125,6 +128,12 @@
     <ClInclude Include="GeometryGenerator.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>Object</Filter>
+    </ClInclude>
+    <ClInclude Include="BillboardObject.h">
+      <Filter>Object</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="HLSL\Basic.hlsli">
@@ -134,6 +143,9 @@
       <Filter>着色器</Filter>
     </None>
     <None Include="HLSL\define.hlsli">
+      <Filter>着色器</Filter>
+    </None>
+    <None Include="HLSL\Billboard.hlsli">
       <Filter>着色器</Filter>
     </None>
   </ItemGroup>
@@ -147,10 +159,10 @@
     <FxCompile Include="HLSL\Billboard_VS.hlsl">
       <Filter>着色器</Filter>
     </FxCompile>
-    <FxCompile Include="HLSL\Billboard_GS.hlsl">
+    <FxCompile Include="HLSL\Billboard_PS.hlsl">
       <Filter>着色器</Filter>
     </FxCompile>
-    <FxCompile Include="HLSL\Billboard_PS.hlsl">
+    <FxCompile Include="HLSL\Billboard_GS.hlsl">
       <Filter>着色器</Filter>
     </FxCompile>
   </ItemGroup>

@@ -78,8 +78,12 @@ public:
 	ComPtr<ID3D11VertexShader> m_pVertexShader3D;				// 用于3D的顶点着色器
 	ComPtr<ID3D11PixelShader>  m_pPixelShader3D;				// 用于3D的像素着色器
 
+	ComPtr<ID3D11VertexShader> m_pVertexShaderBillboard;		// 用于告示板的顶点着色器
+	ComPtr<ID3D11GeometryShader>  m_pGeometryShaderBillboard;		// 用于告示板的几何着色器
+	ComPtr<ID3D11PixelShader>  m_pPixelShaderBillboard;			// 用于告示板的像素着色器
+
 	ComPtr<ID3D11InputLayout>  m_pVertexLayout3D;				// 用于3D的顶点输入布局
-	ComPtr<ID3D11InputLayout>  m_pVertexLayoutBoard;			// 用于告示板的输入布局
+	ComPtr<ID3D11InputLayout> m_pVertexPosSizeLayout;		// 用于告示板的输入布局
 
 	ComPtr<ID3D11ShaderResourceView> m_pTexture;				// 用于绘制的纹理
 
@@ -143,6 +147,7 @@ bool BasicEffect::InitAll(ID3D11Device * device)
 	// 创建顶点着色器(3D)
 	HR(CreateShaderFromFile(L"HLSL\\Basic_VS_3D.cso", L"HLSL\\Basic_VS_3D.hlsl", "VS_3D", "vs_5_0", blob.ReleaseAndGetAddressOf()));
 	HR(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pVertexShader3D.GetAddressOf()));
+	
 	// 创建顶点布局(3D)
 	HR(device->CreateInputLayout(VertexPosNormalTex::inputLayout, ARRAYSIZE(VertexPosNormalTex::inputLayout),
 		blob->GetBufferPointer(), blob->GetBufferSize(), pImpl->m_pVertexLayout3D.GetAddressOf()));
@@ -150,6 +155,28 @@ bool BasicEffect::InitAll(ID3D11Device * device)
 	// 创建像素着色器(3D)
 	HR(CreateShaderFromFile(L"HLSL\\Basic_PS_3D.cso", L"HLSL\\Basic_PS_3D.hlsl", "PS_3D", "ps_5_0", blob.ReleaseAndGetAddressOf()));
 	HR(device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pPixelShader3D.GetAddressOf()));
+
+
+
+
+	
+	// 创建顶点着色器(Billboard)
+	HR(CreateShaderFromFile(L"HLSL\\Billboard_VS.cso", L"HLSL\\Billboard_VS.hlsl", "VS", "vs_5_0", blob.ReleaseAndGetAddressOf()));
+	HR(device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pVertexShaderBillboard.GetAddressOf()));
+	
+	// 创建顶点布局(Billboard)
+	
+	HR(device->CreateInputLayout(VertexPosSize::inputLayout, ARRAYSIZE(VertexPosSize::inputLayout), blob->GetBufferPointer(),
+		blob->GetBufferSize(), pImpl->m_pVertexPosSizeLayout.GetAddressOf()));
+		
+
+	// 创建像素着色器(Billboard)
+	HR(CreateShaderFromFile(L"HLSL\\Billboard_GS.cso", L"HLSL\\Billboard_GS.hlsl", "GS", "gs_5_0", blob.ReleaseAndGetAddressOf()));
+	HR(device->CreateGeometryShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pGeometryShaderBillboard.GetAddressOf()));
+
+	// 创建像素着色器(Billboard)
+	HR(CreateShaderFromFile(L"HLSL\\Billboard_PS.cso", L"HLSL\\Billboard_PS.hlsl", "PS", "ps_5_0", blob.ReleaseAndGetAddressOf()));
+	HR(device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, pImpl->m_pPixelShaderBillboard.GetAddressOf()));
 
 
 	pImpl->m_pCBuffers.assign({
@@ -167,13 +194,21 @@ bool BasicEffect::InitAll(ID3D11Device * device)
 
 	// 设置调试对象名
 	D3D11SetDebugObjectName(pImpl->m_pVertexLayout3D.Get(), "VertexPosNormalTexLayout");
+	D3D11SetDebugObjectName(pImpl->m_pVertexPosSizeLayout.Get(), "VertexPosSizeLayout");
+
 	D3D11SetDebugObjectName(pImpl->m_pCBuffers[0]->cBuffer.Get(), "CBDrawing");
 	D3D11SetDebugObjectName(pImpl->m_pCBuffers[1]->cBuffer.Get(), "CBStates");
 	D3D11SetDebugObjectName(pImpl->m_pCBuffers[2]->cBuffer.Get(), "CBFrame");
 	D3D11SetDebugObjectName(pImpl->m_pCBuffers[3]->cBuffer.Get(), "CBOnResize");
 	D3D11SetDebugObjectName(pImpl->m_pCBuffers[4]->cBuffer.Get(), "CBRarely");
+
 	D3D11SetDebugObjectName(pImpl->m_pVertexShader3D.Get(), "Basic_VS_3D");
 	D3D11SetDebugObjectName(pImpl->m_pPixelShader3D.Get(), "Basic_PS_3D");
+
+	D3D11SetDebugObjectName(pImpl->m_pVertexShaderBillboard.Get(), "Billboard_VS");
+	D3D11SetDebugObjectName(pImpl->m_pGeometryShaderBillboard.Get(), "Billboard_GS");
+	D3D11SetDebugObjectName(pImpl->m_pPixelShaderBillboard.Get(), "Billboard_PS");
+
 
 	return true;
 }
@@ -183,6 +218,7 @@ void BasicEffect::SetRenderDefault(ID3D11DeviceContext * deviceContext)
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	deviceContext->IASetInputLayout(pImpl->m_pVertexLayout3D.Get());
 	deviceContext->VSSetShader(pImpl->m_pVertexShader3D.Get(), nullptr, 0);
+	deviceContext->GSSetShader(nullptr, nullptr, 0);
 	deviceContext->RSSetState(nullptr);
 	deviceContext->PSSetShader(pImpl->m_pPixelShader3D.Get(), nullptr, 0);
 	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
@@ -200,18 +236,44 @@ void BasicEffect::SetRenderNoDoubleBlend(ID3D11DeviceContext* deviceContext, UIN
 	deviceContext->OMSetDepthStencilState(RenderStates::DSSNoDoubleBlend.Get(), stencilRef);
 	deviceContext->OMSetBlendState(RenderStates::BSTransparent.Get(), nullptr, 0xFFFFFFFF);
 }
-
 void BasicEffect::SetRenderTransWithoutDepthWrite(ID3D11DeviceContext* deviceContext)
 {
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	deviceContext->IASetInputLayout(pImpl->m_pVertexLayout3D.Get());
 	deviceContext->VSSetShader(pImpl->m_pVertexShader3D.Get(), nullptr, 0);
+	deviceContext->GSSetShader(nullptr, nullptr, 0);
 	deviceContext->RSSetState(RenderStates::RSNoCull.Get());
 	deviceContext->PSSetShader(pImpl->m_pPixelShader3D.Get(), nullptr, 0);
 	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
 	deviceContext->OMSetDepthStencilState(RenderStates::DSSNoDepthWrite.Get(),0);
 	deviceContext->OMSetBlendState(RenderStates::BSAddictive.Get(), nullptr, 0xFFFFFFFF);
 }
+void BasicEffect::SetRenderBillboard(ID3D11DeviceContext* deviceContext)
+{
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	deviceContext->IASetInputLayout(pImpl->m_pVertexPosSizeLayout.Get());
+	deviceContext->VSSetShader(pImpl->m_pVertexShaderBillboard.Get(), nullptr, 0);
+	deviceContext->GSSetShader(pImpl->m_pGeometryShaderBillboard.Get(), nullptr, 0);
+	deviceContext->RSSetState(RenderStates::RSNoCull.Get());
+	deviceContext->PSSetShader(pImpl->m_pPixelShaderBillboard.Get(), nullptr, 0);
+	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
+	deviceContext->OMSetDepthStencilState(nullptr, 0);
+	deviceContext->OMSetBlendState(nullptr, nullptr, 0xFFFFFFFF);
+}
+
+void BasicEffect::SetRenderBillboardNoDoubleBlend(ID3D11DeviceContext* deviceContext, UINT stencilRef)
+{
+	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+	deviceContext->IASetInputLayout(pImpl->m_pVertexPosSizeLayout.Get());
+	deviceContext->VSSetShader(pImpl->m_pVertexShaderBillboard.Get(), nullptr, 0);
+	deviceContext->GSSetShader(pImpl->m_pGeometryShaderBillboard.Get(), nullptr, 0);
+	deviceContext->RSSetState(RenderStates::RSNoCull.Get());
+	deviceContext->PSSetShader(pImpl->m_pPixelShaderBillboard.Get(), nullptr, 0);
+	deviceContext->PSSetSamplers(0, 1, RenderStates::SSLinearWrap.GetAddressOf());
+	deviceContext->OMSetDepthStencilState(RenderStates::DSSNoDoubleBlend.Get(), stencilRef);
+	deviceContext->OMSetBlendState(RenderStates::BSTransparent.Get(), nullptr, 0xFFFFFFFF);
+}
+
 
 void XM_CALLCONV BasicEffect::SetWorldMatrix(DirectX::FXMMATRIX W)
 {
@@ -317,10 +379,6 @@ void BasicEffect::SetFogState(bool isOn)
 	pImpl->m_IsDirty = cBuffer.isDirty = true;
 }
 
-bool BasicEffect::GetShadowState()
-{
-	return pImpl->m_CBStates.data.isShadow;
-}
 
 void XM_CALLCONV BasicEffect::SetFogPara(float start, float range, DirectX::XMFLOAT4 color)
 {
@@ -345,7 +403,11 @@ void BasicEffect::Apply(ID3D11DeviceContext * deviceContext)
 	pCBuffers[1]->BindPS(deviceContext);
 	pCBuffers[2]->BindPS(deviceContext);
 	pCBuffers[4]->BindPS(deviceContext);
-
+	
+	pCBuffers[1]->BindGS(deviceContext);
+	pCBuffers[2]->BindGS(deviceContext);
+	pCBuffers[3]->BindGS(deviceContext);
+	pCBuffers[4]->BindGS(deviceContext);
 	// 设置纹理
 	deviceContext->PSSetShaderResources(0, 1, pImpl->m_pTexture.GetAddressOf());
 

@@ -1,5 +1,8 @@
-#include "Basic.hlsli"
-float4 main( float4 pos : POSITION ) : SV_POSITION
+#include "Billboard.hlsli"
+VertexCenterSize VS(VertexPosSize vIn)
 {
-	return pos;
+	VertexCenterSize vOut;
+	vOut.CenterW = vIn.PosW;
+	vOut.SizeW = vIn.SizeW;
+	return vOut;
 }

@@ -1,5 +1,6 @@
 #include "LightHelper.hlsli"
 Texture2D g_Tex : register(t0);
+Texture2DArray g_TexArray : register(t1);
 SamplerState g_Sam : register(s0);
 
 

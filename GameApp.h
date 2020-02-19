@@ -4,7 +4,7 @@
 #include "d3dApp.h"
 #include "Camera.h"
 #include "GameObject.h"
-
+#include "BillboardObject.h"
 
 class GameApp : public D3DApp
 {
@@ -28,6 +28,8 @@ private:
 	GameObject m_Floor;										    // 地板
 	GameObject m_Light;											// 光源
 	GameObject m_BoltAnim;										// 闪电动画
+	BillboardObject m_Tree;										// 树
+
 	std::vector<GameObject> m_Walls;							// 墙壁
 
 

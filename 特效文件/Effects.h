@@ -66,8 +66,11 @@ public:
 	void SetRenderNoDoubleBlend(ID3D11DeviceContext * deviceContext, UINT stencilRef);
 	// 透明物体深度测试但不写入
 	void SetRenderTransWithoutDepthWrite(ID3D11DeviceContext* deviceContext);
+	// 告示板
+	void SetRenderBillboard(ID3D11DeviceContext* deviceContext);
 
-
+	// 告示板无二次混合
+	void SetRenderBillboardNoDoubleBlend(ID3D11DeviceContext* deviceContext, UINT stencilRef);
 	//
 	// 矩阵设置
 	//
@@ -108,7 +111,6 @@ public:
 	void SetReflectionState(bool isOn);
 	void SetShadowState(bool isOn);
 	void SetFogState(bool isOn);
-	bool GetShadowState();
 
 	//设置雾的参数
 	void XM_CALLCONV SetFogPara(float start, float range, DirectX::XMFLOAT4 color);

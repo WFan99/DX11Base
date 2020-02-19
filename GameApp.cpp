@@ -1,6 +1,7 @@
 #include "GameApp.h"
 #include "d3dUtil.h"
 #include "DXTrace.h"
+#include "ctime"
 #include "GeometryGenerator.h"
 using namespace DirectX;
 
@@ -79,7 +80,7 @@ void GameApp::UpdateScene(float dt)
 		moveDis += dt * 3.0f * m_Camera.GetRightXM();
 	}
 	
-	m_WoodCrate.SetPosition(XMVectorClamp(moveDis + m_WoodCrate.GetPosXM(), XMVectorSet(-9.0f, 0.0f, -9.0f, 0.0f), XMVectorSet(9.0F, 0.0f, 9.0f, 0.0f)));
+	m_WoodCrate.SetPosition(XMVectorClamp(moveDis + m_WoodCrate.GetPosXM(), XMVectorSet(-90.0f, 0.0f, -90.0f, 0.0f), XMVectorSet(9.0F, 0.0f, 9.0f, 0.0f)));
 	m_Camera.SetTarget(m_WoodCrate.GetPosFloat3());
 	m_Camera.RotateX(mouseState.y * dt * 1.25f);
 	m_Camera.RotateY(mouseState.x * dt * 1.25f);
@@ -137,7 +138,6 @@ void GameApp::DrawScene()
 
 	m_pd3dImmediateContext->ClearRenderTargetView(m_pRenderTargetView.Get(), reinterpret_cast<const float*>(&Colors::Black));
 	m_pd3dImmediateContext->ClearDepthStencilView(m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-	m_BasicEffect.SetRenderDefault(m_pd3dImmediateContext.Get());
 	
 	m_BasicEffect.SetRenderDefault(m_pd3dImmediateContext.Get());
 	for (auto& wall : m_Walls)
@@ -150,11 +150,19 @@ void GameApp::DrawScene()
 	m_BoltAnim.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
 
 	//画阴影
-	m_BasicEffect.SetRenderNoDoubleBlend(m_pd3dImmediateContext.Get(), 0);
 	m_BasicEffect.SetShadowState(true);
-	m_BasicEffect.SetShadowMatrix(XMMatrixShadow(XMVectorSet(0, 1, 0, 0.99), XMVectorSet(m_PointLight.position.x, m_PointLight.position.y, m_PointLight.position.z, 1.0)));
-	m_WoodCrate.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+	m_BasicEffect.SetShadowMatrix(XMMatrixShadow(XMVectorSet(0, 1, 0, 0.99), XMVectorSet(m_PointLight.position.x, m_PointLight.position.y, m_PointLight.position.z, 1.0)));	
+	m_BasicEffect.SetRenderNoDoubleBlend(m_pd3dImmediateContext.Get(), 0);
+	m_WoodCrate.DrawShadow(m_pd3dImmediateContext.Get(), m_BasicEffect);
+	//画树的阴影
+	m_BasicEffect.SetRenderBillboardNoDoubleBlend(m_pd3dImmediateContext.Get(), 0);
+	m_Tree.DrawShadow(m_pd3dImmediateContext.Get(), m_BasicEffect);
 	m_BasicEffect.SetShadowState(false);
+	
+	//画树
+	m_BasicEffect.SetRenderBillboard(m_pd3dImmediateContext.Get());
+	m_Tree.Draw(m_pd3dImmediateContext.Get(), m_BasicEffect);
+
 	HR(m_pSwapChain->Present(0, 0));
 }
 
@@ -198,7 +206,6 @@ bool GameApp::InitResource()
 	m_WoodCrate.SetTexture(texture.Get());
 	m_WoodCrate.SetWorldMatrix(XMMatrixTranslation(0.0f, 0.01f, 0.0f));
 	m_WoodCrate.SetMaterial(material);
-	m_WoodCrate.SetShadow(true);
 	m_WoodCrate.SetShadowMaterial(shadowMat);
 
 	//初始化灯
@@ -242,6 +249,24 @@ bool GameApp::InitResource()
 	m_BoltAnim.SetBuffer(m_pd3dDevice.Get(), vertices, indices);
 	m_BoltAnim.SetTexture(m_BoltTex[0].Get());
 	m_BoltAnim.SetMaterial(material);
+
+	//初始化树
+	HR(CreateDDSTextureFromFile(m_pd3dDevice.Get(), L"Texture\\tree\\tree0.dds", nullptr, texture.GetAddressOf()));
+	
+	srand((unsigned)time(nullptr));
+	std::vector <VertexPosSize>  treeVec(16);
+	for (int i = 0; i < 16; ++i)
+	{
+		float theta = rand() / double(RAND_MAX)*XM_2PI;
+		float radius = rand() % 70 + 20;
+		treeVec[i].pos = XMFLOAT3(radius * cos(theta), 13, radius * sin(theta));
+		treeVec[i].size = XMFLOAT2(30, 30);
+	}
+	std::vector<VertexPosSize> posV(treeVec);
+	m_Tree.SetBuffer(m_pd3dDevice.Get(), posV);
+	m_Tree.SetTexture(texture.Get());
+	m_Tree.SetMaterial(material);
+	m_Tree.SetShadowMaterial(shadowMat);
 
 	// ******************
 	// 初始化摄像机
@@ -300,6 +325,7 @@ bool GameApp::InitResource()
 	m_Walls[3].SetDebugObjectName("Walls[3]");
 	m_WoodCrate.SetDebugObjectName("WoodCrate");
 	m_BoltAnim.SetDebugObjectName("BoltAnim");
+	m_Tree.SetDebugObjectName("Tree");
 
 	return true;
 }
