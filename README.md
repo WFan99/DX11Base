@@ -10,5 +10,5 @@
 
 
 
-![showPic](show\showPic.png)
+![showPic](./show/showPic.png)
 
